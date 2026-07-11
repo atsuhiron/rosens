@@ -1,0 +1,40 @@
+target-version = "py313"
+line-length = 119
+
+src = ["docker_example", "example", "src", "test"]
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "D",
+    "FIX002",   # use TODO
+    "TD002",    #
+    "TD003",    #
+    "PLR2004",  # Magic number
+    "ERA001",   # Ocurring False Positive
+    "FBT001",   # flag parameter
+    "FBT002",   # flag parameter
+    "COM812",   # avoid conflict
+]
+
+[lint.per-file-ignores]
+"__init__.py" = [
+    "F401"      # The imported class is rarely used within __init__.py
+]
+"tests/**.py" = [
+    "S101",     # pytest use assert
+    "SLF001",   # test private method
+    "ARG001",   # Fixture
+    "ASYNC240", # use Path
+    "ASYNC230", # use blocking io 
+]
+
+[lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+]
+
+[format]
+indent-style = "space"
+quote-style = "double"
+skip-magic-trailing-comma = false
