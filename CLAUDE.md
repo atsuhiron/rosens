@@ -35,9 +35,11 @@ Individual commands:
 - `src/rosens/api.py` — FastAPI app and routes. `POST /register` is the endpoint sensors call to
   submit a reading. It's `async def`; the actual file write is dispatched via `asyncio.to_thread`
   because Parquet I/O in `storage.py` is blocking and would otherwise stall the event loop.
-- `src/rosens/storage.py` — persistence layer. Parquet has no native append mode, so writing a
-  reading means: read the existing daily file (if any), concatenate the new row with polars, and
-  rewrite the whole file. A module-level `threading.Lock` serializes this read-modify-write so
+- `src/rosens/storage.py` — persistence layer, exposed as the `Storage` class (constructed with a
+  `data_dir`). The app obtains the shared instance via `get_storage()` (`lru_cache`d so there is
+  exactly one instance — and one lock — per process). Parquet has no native append mode, so writing
+  a reading means: read the existing daily file (if any), concatenate the new row with polars, and
+  rewrite the whole file. An instance-level `threading.Lock` serializes this read-modify-write so
   concurrent requests (FastAPI runs work in a thread pool) don't race on the same file. Files are
   named `{data_dir}/YYYY-MM-DD.parquet`, one per calendar day.
 - `src/rosens/config.py` — defines `Config` (currently just `data_dir`) and `get_config()`, which
@@ -58,5 +60,5 @@ Individual commands:
   because polars converts timezone-aware datetimes through `zoneinfo` internally, and Windows has
   no system IANA tz database. Without it, reading back a parquet file with tz-aware columns raises
   `ZoneInfoNotFoundError`.
-- Storage and config are tested against a temp directory by monkeypatching `rosens.storage.get_config`
+- Storage is tested against a temp directory by constructing `Storage(data_dir=tmp_path)` directly
   (see `tests/test_storage.py`) rather than touching the real `config.json`/`data`.
