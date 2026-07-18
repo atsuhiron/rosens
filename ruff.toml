@@ -18,6 +18,10 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
+"etc/**.py" = [
+    "T201",     # debug scripts print to stdout
+    "INP001",   # etc/ is a script directory, not a package
+]
 "__init__.py" = [
     "F401"      # The imported class is rarely used within __init__.py
 ]

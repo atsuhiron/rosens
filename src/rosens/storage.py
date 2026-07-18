@@ -24,8 +24,11 @@ class Storage:
                 "temperature": [sensor_data.temperature],
                 "humidity": [sensor_data.humidity],
                 "pressure": [sensor_data.pressure],
+                "uptime_s": [sensor_data.uptime_s],
                 "recieved_at": [recieved_at],
             },
+            # Stored as INT32 in parquet; polars would otherwise default python ints to Int64.
+            schema_overrides={"uptime_s": pl.Int32},
         )
 
         path = self._file_path_for(recieved_at)

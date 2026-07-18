@@ -13,6 +13,9 @@ dependencies = [
     "uvicorn>=0.51.0",
 ]
 
+[project.scripts]
+rosens-server = "rosens.server:main"
+
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",

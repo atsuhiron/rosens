@@ -19,6 +19,8 @@ def test_save_sensor_data_creates_new_file(tmp_path: Path) -> None:
     assert path.exists()
     df = pl.read_parquet(path)
     assert df["sensor_id"].to_list() == ["sensor-1"]
+    assert df["uptime_s"].to_list() == [3600]
+    assert df["uptime_s"].dtype == pl.Int32
 
 
 def test_save_sensor_data_appends_to_existing_file(tmp_path: Path) -> None:

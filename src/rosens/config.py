@@ -14,4 +14,5 @@ class Config(BaseModel):
 def get_config() -> Config:
     if not CONFIG_PATH.exists():
         return Config()
-    return Config.model_validate_json(CONFIG_PATH.read_text(encoding="utf-8"))
+    # utf-8-sig tolerates the BOM that Windows editors (Notepad, PowerShell) often prepend.
+    return Config.model_validate_json(CONFIG_PATH.read_text(encoding="utf-8-sig"))
