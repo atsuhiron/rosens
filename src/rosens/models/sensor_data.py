@@ -6,3 +6,4 @@ class SensorData(BaseModel):
     temperature: float = Field(description="Temperature in Celsius")
     humidity: float = Field(description="Humidity in percentage")
     pressure: float = Field(description="Atmospheric pressure in hPa")
+    uptime_s: int = Field(description="Uptime of the sensor in seconds")

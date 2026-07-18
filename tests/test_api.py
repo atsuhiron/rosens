@@ -19,7 +19,7 @@ async def test_register_calls_save_sensor_data(monkeypatch: pytest.MonkeyPatch) 
     fake_storage = FakeStorage()
     monkeypatch.setattr("rosens.api.get_storage", lambda: fake_storage)
 
-    sensor_data = SensorData(sensor_id="sensor-1", temperature=23.5, humidity=45.2, pressure=1013.2)
+    sensor_data = SensorData(sensor_id="sensor-1", temperature=23.5, humidity=45.2, pressure=1013.2, uptime_s=3600)
 
     response = await register(sensor_data)
 

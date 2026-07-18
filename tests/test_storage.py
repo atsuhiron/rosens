@@ -11,7 +11,7 @@ RECIEVED_AT = datetime(2026, 7, 11, 12, 0, 0, tzinfo=UTC)
 
 def test_save_sensor_data_creates_new_file(tmp_path: Path) -> None:
     storage = Storage(data_dir=tmp_path)
-    sensor_data = SensorData(sensor_id="sensor-1", temperature=20.0, humidity=40.0, pressure=1000.0)
+    sensor_data = SensorData(sensor_id="sensor-1", temperature=20.0, humidity=40.0, pressure=1000.0, uptime_s=3600)
 
     storage.save_sensor_data(sensor_data, RECIEVED_AT)
 
@@ -23,8 +23,8 @@ def test_save_sensor_data_creates_new_file(tmp_path: Path) -> None:
 
 def test_save_sensor_data_appends_to_existing_file(tmp_path: Path) -> None:
     storage = Storage(data_dir=tmp_path)
-    first = SensorData(sensor_id="sensor-1", temperature=20.0, humidity=40.0, pressure=1000.0)
-    second = SensorData(sensor_id="sensor-2", temperature=21.0, humidity=41.0, pressure=1001.0)
+    first = SensorData(sensor_id="sensor-1", temperature=20.0, humidity=40.0, pressure=1000.0, uptime_s=3600)
+    second = SensorData(sensor_id="sensor-2", temperature=21.0, humidity=41.0, pressure=1001.0, uptime_s=3600)
 
     storage.save_sensor_data(first, RECIEVED_AT)
     storage.save_sensor_data(second, RECIEVED_AT)
