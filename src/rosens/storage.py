@@ -1,12 +1,14 @@
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
+from typing import cast
 
 import polars as pl
 
 from rosens.config import get_config
-from rosens.models.sensor_data import SensorData
+from rosens.models.sensor_data import SensorData, SensorRecord
+from rosens.util import TZ
 
 
 class Storage:
@@ -50,6 +52,34 @@ class Storage:
             else:
                 combined = row
             combined.write_parquet(path)
+
+    def load_sensor_data(self, start: datetime, end: datetime) -> list[SensorRecord]:
+        # Daily files are bucketed by JST date, so the range of candidate files is
+        # derived from the JST dates of the query bounds.
+        first_day = start.astimezone(TZ).date()
+        last_day = end.astimezone(TZ).date()
+
+        # Reads take the lock too: save_sensor_data rewrites the whole file, and a
+        # concurrent read could otherwise see a partially written parquet file.
+        with self._lock:
+            frames = []
+            day = first_day
+            while day <= last_day:
+                path = self._data_dir / f"{day:%Y-%m-%d}.parquet"
+                if path.exists():
+                    frames.append(pl.read_parquet(path))
+                day += timedelta(days=1)
+
+        if not frames:
+            return []
+        df = pl.concat(frames).filter(pl.col("recieved_at").is_between(start, end)).sort("recieved_at")
+        # to_dicts() is untyped (list[dict[str, Any]]); the parquet schema guarantees these keys.
+        rows = cast("list[SensorRecord]", df.to_dicts())
+        # Parquet normalizes tz-aware datetimes to UTC; convert back to JST so API
+        # responses are consistently in the system timezone.
+        for row in rows:
+            row["recieved_at"] = row["recieved_at"].astimezone(TZ)
+        return rows
 
 
 # Cached so the whole app shares one instance — and therefore one lock.
