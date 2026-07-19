@@ -21,6 +21,9 @@ def test_save_sensor_data_creates_new_file(tmp_path: Path) -> None:
     assert df["sensor_id"].to_list() == ["sensor-1"]
     assert df["uptime_s"].to_list() == [3600]
     assert df["uptime_s"].dtype == pl.Int32
+    assert df["temperature"].dtype == pl.Float32
+    assert df["humidity"].dtype == pl.Float32
+    assert df["pressure"].dtype == pl.Float32
 
 
 def test_save_sensor_data_appends_to_existing_file(tmp_path: Path) -> None:
