@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 
 import fastapi
 
@@ -19,6 +20,10 @@ app = fastapi.FastAPI(
     title="Rosens API",
     version="0.1.0",
 )
+
+# Dashboard (static HTML + vendored ECharts). Resolved from the package location so
+# it works regardless of the server's working directory.
+app.frontend("/ui", directory=str(Path(__file__).parent / "frontend"))
 
 
 @app.get("/")

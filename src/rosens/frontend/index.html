@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rosens ダッシュボード</title>
+<script src="echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --text: #24292f;
+    --muted: #6a737d;
+    --accent: #2468f2;
+    --border: #d8dde3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  h1 { font-size: 18px; margin: 0 16px 0 0; }
+  .periods { display: flex; gap: 4px; }
+  .periods button {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .periods button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  #reload {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  label.auto { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  #status { font-size: 12px; color: var(--muted); margin-left: auto; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px 20px 40px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 8px 0;
+    margin-bottom: 16px;
+  }
+  .chart { width: 100%; height: 320px; }
+  #empty {
+    display: none;
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 0;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Rosens ダッシュボード</h1>
+  <div class="periods" id="periods">
+    <button data-hours="1">1時間</button>
+    <button data-hours="6">6時間</button>
+    <button data-hours="24" class="active">24時間</button>
+    <button data-hours="168">7日</button>
+  </div>
+  <button id="reload">更新</button>
+  <label class="auto"><input type="checkbox" id="auto">自動更新 (60秒)</label>
+  <span id="status"></span>
+</header>
+<main>
+  <div id="empty">この期間のデータがありません</div>
+  <div class="panel"><div id="chart-temperature" class="chart"></div></div>
+  <div class="panel"><div id="chart-humidity" class="chart"></div></div>
+  <div class="panel"><div id="chart-pressure" class="chart"></div></div>
+</main>
+<script>
+"use strict";
+
+const METRICS = [
+  { key: "temperature", title: "温度 (°C)", el: "chart-temperature" },
+  { key: "humidity", title: "湿度 (%)", el: "chart-humidity" },
+  { key: "pressure", title: "気圧 (hPa)", el: "chart-pressure" },
+];
+
+const charts = new Map(
+  METRICS.map((m) => [m.key, echarts.init(document.getElementById(m.el))]),
+);
+window.addEventListener("resize", () => charts.forEach((c) => c.resize()));
+
+let periodHours = 24;
+let autoTimer = null;
+
+function baseOption(title) {
+  return {
+    title: { text: title, left: 8, top: 4, textStyle: { fontSize: 14 } },
+    tooltip: { trigger: "axis" },
+    legend: { top: 4 },
+    grid: { left: 60, right: 24, top: 44, bottom: 64 },
+    xAxis: { type: "time" },
+    yAxis: { type: "value", scale: true },
+    dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 12 }],
+  };
+}
+
+function render(data) {
+  const isEmpty = data.every((sensor) => sensor.sequence.length === 0);
+  document.getElementById("empty").style.display = isEmpty ? "block" : "none";
+  for (const metric of METRICS) {
+    const series = data.map((sensor) => ({
+      name: sensor.sensor_id,
+      type: "line",
+      showSymbol: false,
+      data: sensor.sequence.map((r) => [r.recieved_at, r[metric.key]]),
+    }));
+    const option = baseOption(metric.title);
+    option.series = series;
+    // notMerge so series of sensors that disappeared from the response are dropped.
+    charts.get(metric.key).setOption(option, { notMerge: true });
+  }
+}
+
+async function reload() {
+  const status = document.getElementById("status");
+  status.textContent = "読み込み中…";
+  const start = new Date(Date.now() - periodHours * 3600 * 1000).toISOString();
+  try {
+    const res = await fetch(`../data?start=${encodeURIComponent(start)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await res.json();
+    render(body.data);
+    status.textContent = `最終更新: ${new Date().toLocaleTimeString()}`;
+  } catch (err) {
+    status.textContent = `取得エラー: ${err.message}`;
+  }
+}
+
+document.getElementById("periods").addEventListener("click", (ev) => {
+  const button = ev.target.closest("button[data-hours]");
+  if (!button) return;
+  periodHours = Number(button.dataset.hours);
+  for (const b of document.querySelectorAll("#periods button")) {
+    b.classList.toggle("active", b === button);
+  }
+  reload();
+});
+
+document.getElementById("reload").addEventListener("click", reload);
+
+document.getElementById("auto").addEventListener("change", (ev) => {
+  if (ev.target.checked) {
+    autoTimer = setInterval(reload, 60_000);
+  } else {
+    clearInterval(autoTimer);
+    autoTimer = null;
+  }
+});
+
+reload();
+</script>
+</body>
+</html>

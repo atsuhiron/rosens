@@ -48,6 +48,10 @@ Individual commands:
   overrides.
 - `src/rosens/models/` — pydantic schemas: `sensor_data.py` (the inbound reading) and
   `api_models.py` (response bodies).
+- `src/rosens/frontend/` — static dashboard served at `/ui` via FastAPI's `app.frontend()`
+  (requires fastapi >= 0.138). Plain HTML/JS, no build step; `echarts.min.js` is a vendored copy of
+  Apache ECharts (from jsDelivr) so the page works without internet access. The directory is
+  resolved from `api.py`'s `__file__`, not the working directory.
 - `src/rosens/util.py` — shared constants; `TZ` is a fixed JST (UTC+9) offset used to timestamp
   incoming readings server-side (sensors do not send their own timestamp).
 
