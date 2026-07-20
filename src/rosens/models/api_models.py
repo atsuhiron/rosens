@@ -12,12 +12,12 @@ class PingResponse(BaseModel):
 
 
 class RegisterResponse(BaseModel):
-    msg: Literal["recieved"] = Field(description="Confirmation message for successful registration")
-    recieved_at: datetime = Field(description="Timestamp when the data was received")
+    msg: Literal["received"] = Field(description="Confirmation message for successful registration")
+    received_at: datetime = Field(description="Timestamp when the data was received")
 
 
 class StoredEnvironmentData(EnvironmentReading):
-    recieved_at: datetime = Field(description="Timestamp when the data was received")
+    received_at: datetime = Field(description="Timestamp when the data was received")
 
 
 class EnvironmentSequence(BaseModel):

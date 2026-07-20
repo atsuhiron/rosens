@@ -133,7 +133,7 @@ function render(data) {
       name: sensor.sensor_id,
       type: "line",
       showSymbol: false,
-      data: sensor.sequence.map((r) => [r.recieved_at, r[metric.key]]),
+      data: sensor.sequence.map((r) => [r.received_at, r[metric.key]]),
     }));
     const option = baseOption(metric.title);
     option.series = series;

@@ -41,7 +41,7 @@ Individual commands:
   subdirectory name under `data_dir` and the parquet `schema_overrides` (e.g. Float32/Int32).
   See "API extension policy" below for how new kinds are added.
 - `src/rosens/storage.py` — persistence layer, exposed as the `Storage` class (constructed with a
-  `data_dir`); `save(dataset, data, recieved_at)` / `load(dataset, start, end)` are generic over
+  `data_dir`); `save(dataset, data, received_at)` / `load(dataset, start, end)` are generic over
   the dataset. The app obtains the shared instance via `get_storage()` (`lru_cache`d so there is
   exactly one instance — and one lock — per process). Parquet has no native append mode, so writing
   a reading means: read the existing daily file (if any), concatenate the new row with polars, and
@@ -76,7 +76,7 @@ already made (with the user) that future work should follow:
   2. `src/rosens/datasets.py`: one `Dataset[<KindRecord>]` entry (directory name +
      parquet `schema_overrides`).
   3. `src/rosens/api.py`: the two endpoints, following the environment handlers as the template.
-- **Storage model is uniform**: every kind is "rows with a server-side `recieved_at`, appended to
+- **Storage model is uniform**: every kind is "rows with a server-side `received_at`, appended to
   a daily parquet file under `data/<kind>/`". This covers periodic readings (CO2, illuminance, …)
   and irregular event data (door open/close, motion) alike — event kinds just post whenever the
   event happens. Kind-specific response shaping (like the per-sensor grouping for environment)

@@ -38,7 +38,7 @@ async def register_environment(data: EnvironmentData) -> RegisterResponse:
     # save() does blocking file I/O (polars parquet read/write), so it is
     # offloaded to a thread to keep the event loop free for other requests.
     await asyncio.to_thread(get_storage().save, ENVIRONMENT, data, now)
-    return RegisterResponse(msg="recieved", recieved_at=now)
+    return RegisterResponse(msg="received", received_at=now)
 
 
 @app.get("/data/environment")
@@ -54,7 +54,7 @@ async def get_environment_data(start: datetime, end: datetime | None = None) -> 
     # Wrapped in a lambda because ty cannot solve load()'s type variable through to_thread.
     query_end = end
     rows = await asyncio.to_thread(lambda: get_storage().load(ENVIRONMENT, start, query_end))
-    # Rows arrive sorted by recieved_at, so each per-sensor sequence stays oldest-first.
+    # Rows arrive sorted by received_at, so each per-sensor sequence stays oldest-first.
     grouped: dict[str, list[StoredEnvironmentData]] = defaultdict(list)
     for row in rows:
         grouped[row["sensor_id"]].append(StoredEnvironmentData.model_validate(row))

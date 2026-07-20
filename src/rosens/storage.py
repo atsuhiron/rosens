@@ -20,13 +20,13 @@ class Storage:
     def _file_path(self, dataset: Dataset, day: date) -> Path:
         return self._data_dir / dataset.name / f"{day:%Y-%m-%d}.parquet"
 
-    def save[RecordT](self, dataset: Dataset[RecordT], data: BaseModel, recieved_at: datetime) -> None:
+    def save[RecordT](self, dataset: Dataset[RecordT], data: BaseModel, received_at: datetime) -> None:
         row = pl.DataFrame(
-            {**{key: [value] for key, value in data.model_dump().items()}, "recieved_at": [recieved_at]},
+            {**{key: [value] for key, value in data.model_dump().items()}, "received_at": [received_at]},
             schema_overrides=dataset.schema_overrides,
         )
 
-        path = self._file_path(dataset, recieved_at.astimezone(TZ).date())
+        path = self._file_path(dataset, received_at.astimezone(TZ).date())
 
         # Parquet has no native append, so the daily file is read, combined with the
         # new row, and rewritten. The instance-wide lock keeps concurrent requests
@@ -59,13 +59,13 @@ class Storage:
 
         if not frames:
             return []
-        df = pl.concat(frames).filter(pl.col("recieved_at").is_between(start, end)).sort("recieved_at")
+        df = pl.concat(frames).filter(pl.col("received_at").is_between(start, end)).sort("received_at")
         # to_dicts() is untyped (list[dict[str, Any]]); the parquet schema guarantees these keys.
         rows = df.to_dicts()
         # Parquet normalizes tz-aware datetimes to UTC; convert back to JST so API
         # responses are consistently in the system timezone.
         for row in rows:
-            row["recieved_at"] = row["recieved_at"].astimezone(TZ)
+            row["received_at"] = row["received_at"].astimezone(TZ)
         return cast("list[RecordT]", rows)
 
 

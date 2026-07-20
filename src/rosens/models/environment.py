@@ -25,4 +25,4 @@ class EnvironmentRecord(TypedDict):
     humidity: float
     pressure: float
     uptime_s: int
-    recieved_at: datetime
+    received_at: datetime
