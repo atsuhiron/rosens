@@ -219,3 +219,6 @@ __marimo__/
 
 # Sensor data output
 /data/
+
+# Personal operation notes
+/operation.md
