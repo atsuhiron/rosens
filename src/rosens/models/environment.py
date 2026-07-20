@@ -4,7 +4,7 @@ from typing import TypedDict
 from pydantic import BaseModel, Field
 
 
-class SensorReading(BaseModel):
+class EnvironmentReading(BaseModel):
     """Measured values of a single reading, without sensor identity."""
 
     temperature: float = Field(description="Temperature in Celsius")
@@ -13,11 +13,11 @@ class SensorReading(BaseModel):
     uptime_s: int = Field(description="Uptime of the sensor in seconds")
 
 
-class SensorData(SensorReading):
+class EnvironmentData(EnvironmentReading):
     sensor_id: str = Field(description="Unique identifier for the sensor")
 
 
-class SensorRecord(TypedDict):
+class EnvironmentRecord(TypedDict):
     """A stored reading as loaded back from a parquet row (internal, not an API schema)."""
 
     sensor_id: str

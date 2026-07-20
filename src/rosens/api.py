@@ -5,14 +5,15 @@ from pathlib import Path
 
 import fastapi
 
+from rosens.datasets import ENVIRONMENT
 from rosens.models.api_models import (
-    GetDataResponse,
+    EnvironmentSequence,
+    GetEnvironmentDataResponse,
     PingResponse,
     RegisterResponse,
-    SensorSequence,
-    StoredSensorData,
+    StoredEnvironmentData,
 )
-from rosens.models.sensor_data import SensorData
+from rosens.models.environment import EnvironmentData
 from rosens.storage import get_storage
 from rosens.util import TZ
 
@@ -31,17 +32,17 @@ def ping() -> PingResponse:
     return PingResponse(status="ok", version=app.version)
 
 
-@app.post("/register")
-async def register(sensor_data: SensorData) -> RegisterResponse:
+@app.post("/register/environment")
+async def register_environment(data: EnvironmentData) -> RegisterResponse:
     now = datetime.now(tz=TZ)
-    # save_sensor_data does blocking file I/O (polars parquet read/write), so it is
+    # save() does blocking file I/O (polars parquet read/write), so it is
     # offloaded to a thread to keep the event loop free for other requests.
-    await asyncio.to_thread(get_storage().save_sensor_data, sensor_data, now)
+    await asyncio.to_thread(get_storage().save, ENVIRONMENT, data, now)
     return RegisterResponse(msg="recieved", recieved_at=now)
 
 
-@app.get("/data")
-async def get_data(start: datetime, end: datetime | None = None) -> GetDataResponse:
+@app.get("/data/environment")
+async def get_environment_data(start: datetime, end: datetime | None = None) -> GetEnvironmentDataResponse:
     # Naive datetimes are interpreted as JST, the timezone the whole system runs in.
     if start.tzinfo is None:
         start = start.replace(tzinfo=TZ)
@@ -49,14 +50,17 @@ async def get_data(start: datetime, end: datetime | None = None) -> GetDataRespo
         end = datetime.now(tz=TZ)
     elif end.tzinfo is None:
         end = end.replace(tzinfo=TZ)
-    # load_sensor_data does blocking file I/O, so it is offloaded like /register.
-    rows = await asyncio.to_thread(get_storage().load_sensor_data, start, end)
+    # load() does blocking file I/O, so it is offloaded like the register endpoint.
+    # Wrapped in a lambda because ty cannot solve load()'s type variable through to_thread.
+    query_end = end
+    rows = await asyncio.to_thread(lambda: get_storage().load(ENVIRONMENT, start, query_end))
     # Rows arrive sorted by recieved_at, so each per-sensor sequence stays oldest-first.
-    grouped: dict[str, list[StoredSensorData]] = defaultdict(list)
+    grouped: dict[str, list[StoredEnvironmentData]] = defaultdict(list)
     for row in rows:
-        grouped[row["sensor_id"]].append(StoredSensorData.model_validate(row))
-    return GetDataResponse(
+        grouped[row["sensor_id"]].append(StoredEnvironmentData.model_validate(row))
+    return GetEnvironmentDataResponse(
         data=[
-            SensorSequence(sensor_id=sensor_id, sequence=sequence) for sensor_id, sequence in sorted(grouped.items())
+            EnvironmentSequence(sensor_id=sensor_id, sequence=sequence)
+            for sensor_id, sequence in sorted(grouped.items())
         ]
     )

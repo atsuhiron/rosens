@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from rosens.models.sensor_data import SensorReading
+from rosens.models.environment import EnvironmentReading
 
 
 class PingResponse(BaseModel):
@@ -16,14 +16,14 @@ class RegisterResponse(BaseModel):
     recieved_at: datetime = Field(description="Timestamp when the data was received")
 
 
-class StoredSensorData(SensorReading):
+class StoredEnvironmentData(EnvironmentReading):
     recieved_at: datetime = Field(description="Timestamp when the data was received")
 
 
-class SensorSequence(BaseModel):
+class EnvironmentSequence(BaseModel):
     sensor_id: str = Field(description="Unique identifier for the sensor")
-    sequence: list[StoredSensorData] = Field(description="Readings from this sensor, oldest first")
+    sequence: list[StoredEnvironmentData] = Field(description="Readings from this sensor, oldest first")
 
 
-class GetDataResponse(BaseModel):
-    data: list[SensorSequence] = Field(description="Per-sensor readings in the requested period")
+class GetEnvironmentDataResponse(BaseModel):
+    data: list[EnvironmentSequence] = Field(description="Per-sensor readings in the requested period")
