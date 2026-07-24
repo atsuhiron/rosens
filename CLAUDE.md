@@ -88,6 +88,23 @@ already made (with the user) that future work should follow:
   be made freely without migration code — delete stale parquet files instead. Revisit this rule
   once real deployments exist.
 
+## Release process
+
+Versioning follows SemVer; the changelog follows Keep a Changelog. The version lives in three
+places that must always move together.
+
+- **Between releases (feature work and bugfixes)**: every user-facing change gets a `CHANGELOG.md`
+  entry under the `## [Unreleased]` heading (in the right `### Added` / `### Changed` / `### Fixed`
+  group). Do **not** bump any version number for in-progress work.
+- **At release time**, make exactly these three changes together:
+  1. `CHANGELOG.md` — add the new version heading (`## [X.Y.Z] - YYYY-MM-DD`) directly under
+     `## [Unreleased]`, with the accumulated entries beneath it. Leave `## [Unreleased]` in place
+     for the next cycle.
+  2. `src/rosens/api.py` — update the `version=` of the `FastAPI(...)` app (reported by `GET /`).
+  3. `pyproject.toml` — update `[project].version`.
+
+  Keep all three version numbers identical.
+
 ## Things to know
 
 - **Packaging**: the project has a `[build-system]` (hatchling) so `uv sync`/`uv run` installs
