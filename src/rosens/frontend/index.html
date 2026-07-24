@@ -146,8 +146,13 @@ async function reload() {
   const status = document.getElementById("status");
   status.textContent = "読み込み中…";
   const start = new Date(Date.now() - periodHours * 3600 * 1000).toISOString();
+  // Cap points to the chart's pixel width (~1 point/px): a no-op for short periods,
+  // and it trims the long ones (7d ≈ 10k points) down to what the graph can show.
+  const maxPoints = Math.round(charts.get("temperature").getWidth()) || 1000;
   try {
-    const res = await fetch(`../data/environment?start=${encodeURIComponent(start)}`);
+    const res = await fetch(
+      `../data/environment?start=${encodeURIComponent(start)}&max_points=${maxPoints}`,
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = await res.json();
     render(body.data);

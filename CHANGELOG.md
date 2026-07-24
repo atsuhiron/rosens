@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `GET /data/environment` — optional `max_points` query parameter. When given, each sensor's
+  sequence is thinned to at most `max_points` points by every-Nth decimation (the last point is
+  always kept); omitting it returns every point as before. The dashboard passes the chart's pixel
+  width so long periods (7d ≈ 10k points/sensor) shrink to what the graph can actually show, cutting
+  response size and client-side parse cost. Stored Parquet data is untouched.
+
 ## [1.0.0] - 2026-07-20
 
 First release. A FastAPI server that receives room environment readings from sensors over HTTP,

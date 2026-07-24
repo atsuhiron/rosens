@@ -101,10 +101,11 @@ Return readings in a time period, grouped per sensor.
 
 **Query parameters**
 
-| Parameter | Required | Description                                          |
-| --------- | -------- | ---------------------------------------------------- |
-| `start`   | yes      | Start of the period (inclusive)                      |
-| `end`     | no       | End of the period (inclusive); defaults to now (JST) |
+| Parameter    | Required | Description                                                                        |
+| ------------ | -------- | --------------------------------------------------------------------------------- |
+| `start`      | yes      | Start of the period (inclusive)                                                   |
+| `end`        | no       | End of the period (inclusive); defaults to now (JST)                              |
+| `max_points` | no       | Max points per sensor; excess is thinned by every-Nth decimation. Omit for all points |
 
 **Response** — one entry per sensor; each `sequence` is ordered oldest first:
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from pydantic import BaseModel
@@ -70,3 +70,31 @@ async def test_get_environment_data_groups_rows_by_sensor(monkeypatch: pytest.Mo
     assert [reading.temperature for reading in s01.sequence] == [20.0, 20.5]
     assert [reading.received_at for reading in s01.sequence] == [t1, t2]
     assert not hasattr(s01.sequence[0], "sensor_id")
+
+
+@pytest.mark.asyncio
+async def test_get_environment_data_downsamples_when_max_points_given(monkeypatch: pytest.MonkeyPatch) -> None:
+    base = datetime(2026, 7, 19, 0, 0, 0, tzinfo=TZ)
+    rows = [_row("s-01", float(i), base + timedelta(minutes=i)) for i in range(1000)]
+    fake_storage = FakeStorage(rows=rows)
+    monkeypatch.setattr("rosens.api.get_storage", lambda: fake_storage)
+
+    response = await get_environment_data(start=base, max_points=100)
+
+    sequence = response.data[0].sequence
+    assert len(sequence) <= 101
+    # First and last readings are preserved so the line still spans the whole period.
+    assert sequence[0].received_at == rows[0]["received_at"]
+    assert sequence[-1].received_at == rows[-1]["received_at"]
+
+
+@pytest.mark.asyncio
+async def test_get_environment_data_returns_all_points_without_max_points(monkeypatch: pytest.MonkeyPatch) -> None:
+    base = datetime(2026, 7, 19, 0, 0, 0, tzinfo=TZ)
+    rows = [_row("s-01", float(i), base + timedelta(minutes=i)) for i in range(1000)]
+    fake_storage = FakeStorage(rows=rows)
+    monkeypatch.setattr("rosens.api.get_storage", lambda: fake_storage)
+
+    response = await get_environment_data(start=base)
+
+    assert len(response.data[0].sequence) == 1000
