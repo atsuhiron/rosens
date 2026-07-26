@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Dashboard (`/ui`) — shows the server's API version next to the title, fetched from the ping
+  endpoint (`GET /`) on load.
 - `GET /data/environment` — optional `max_points` query parameter. When given, each sensor's
   sequence is thinned to at most `max_points` points by every-Nth decimation (the last point is
   always kept); omitting it returns every point as before. The dashboard passes the chart's pixel
