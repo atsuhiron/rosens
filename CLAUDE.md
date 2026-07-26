@@ -105,6 +105,13 @@ places that must always move together.
 
   Keep all three version numbers identical.
 
+  Then run `check.bat`: it rebuilds the editable install, which rewrites the `rosens` version in
+  `uv.lock`. Include that `uv.lock` change in the release commit too (so four files move together).
+
+  After committing the release, tag that commit with the version: `git tag X.Y.Z` (e.g. `1.1.0`,
+  no `v` prefix — matches the existing `1.0.0` tag). The tag is how each version is anchored in
+  history, so don't skip it.
+
 ## Things to know
 
 - **Packaging**: the project has a `[build-system]` (hatchling) so `uv sync`/`uv run` installs
