@@ -21,7 +21,7 @@ from rosens.util import TZ
 
 app = fastapi.FastAPI(
     title="Rosens API",
-    version="1.1.0",
+    version="1.1.1",
 )
 
 # Dashboard (static HTML + vendored ECharts). Resolved from the package location so

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-22
+
 ### Fixed
 
 - Dashboard (`/ui`) — the time labels on the charts' horizontal axis no longer overlap on narrow
@@ -15,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tick density on desktop is unchanged.
 
 ### Internal
+
 - Update libraries.
 
 ## [1.1.0] - 2026-07-26
