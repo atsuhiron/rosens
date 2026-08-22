@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Dashboard (`/ui`) — the time labels on the charts' horizontal axis no longer overlap on narrow
+  screens (smartphones). The number of ticks now follows the chart width (3 / 5 / 7 for narrow /
+  medium / wide), labels shrink slightly on phones, and any that would still collide are hidden.
+  Tick density on desktop is unchanged.
+
+### Internal
+- Update libraries.
+
 ## [1.1.0] - 2026-07-26
 
 ### Added

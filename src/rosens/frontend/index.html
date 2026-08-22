@@ -110,10 +110,28 @@ const METRICS = [
 const charts = new Map(
   METRICS.map((m) => [m.key, echarts.init(document.getElementById(m.el))]),
 );
-window.addEventListener("resize", () => charts.forEach((c) => c.resize()));
+window.addEventListener("resize", () => {
+  for (const chart of charts.values()) {
+    chart.resize();
+    // Recompute the tick density: the chart got narrower/wider.
+    chart.setOption({ xAxis: timeAxisOption() });
+  }
+});
 
 let periodHours = 24;
 let autoTimer = null;
+
+// Thin out the time labels on narrow screens (phones), where the default tick
+// count makes them run into each other.
+function timeAxisOption() {
+  const width = charts.get("temperature").getWidth() || window.innerWidth;
+  const narrow = width < 480;
+  return {
+    type: "time",
+    splitNumber: narrow ? 3 : width < 800 ? 5 : 7,
+    axisLabel: { hideOverlap: true, fontSize: narrow ? 10 : 12 },
+  };
+}
 
 function baseOption(title) {
   return {
@@ -121,7 +139,7 @@ function baseOption(title) {
     tooltip: { trigger: "axis" },
     legend: { top: 4 },
     grid: { left: 60, right: 24, top: 44, bottom: 64 },
-    xAxis: { type: "time" },
+    xAxis: timeAxisOption(),
     yAxis: { type: "value", scale: true },
     dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 12 }],
   };
