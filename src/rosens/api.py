@@ -48,6 +48,7 @@ async def get_environment_data(
     start: datetime,
     end: datetime | None = None,
     max_points: Annotated[int | None, fastapi.Query(gt=0)] = None,
+    sensor_ids: str | None = None,
 ) -> GetEnvironmentDataResponse:
     # Naive datetimes are interpreted as JST, the timezone the whole system runs in.
     if start.tzinfo is None:
@@ -60,10 +61,13 @@ async def get_environment_data(
     # Wrapped in a lambda because ty cannot solve load()'s type variable through to_thread.
     query_end = end
     rows = await asyncio.to_thread(lambda: get_storage().load(ENVIRONMENT, start, query_end))
+    # Comma-separated; an empty selection means every sensor.
+    selected = {part.strip() for part in (sensor_ids or "").split(",")} - {""}
     # Rows arrive sorted by received_at, so each per-sensor sequence stays oldest-first.
     grouped: dict[str, list[EnvironmentRecord]] = defaultdict(list)
     for row in rows:
-        grouped[row["sensor_id"]].append(row)
+        if not selected or row["sensor_id"] in selected:
+            grouped[row["sensor_id"]].append(row)
     data = []
     for sensor_id, sensor_rows in sorted(grouped.items()):
         # Thin each sensor independently (densities/gaps differ per sensor). Decimating the

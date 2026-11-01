@@ -35,7 +35,8 @@ uv run rosens-server       # start the server on 0.0.0.0:8000
 ```
 
 `rosens-server` binds to `0.0.0.0:8000`, so other devices on the LAN can reach it at
-`http://<host-ip>:8000`. The dashboard is at `http://<host-ip>:8000/ui`.
+`http://<host-ip>:8000`. The dashboard is at `http://<host-ip>:8000/ui`; to show only some sensors,
+list them comma-separated, as in `http://<host-ip>:8000/ui?sensor_ids=home_1,home_2`.
 
 For development with auto-reload:
 
@@ -79,6 +80,9 @@ Submit a single environment reading. Called by sensors.
 | `pressure`    | float   | Atmospheric pressure in hPa     |
 | `uptime_s`    | integer | Sensor uptime in seconds        |
 
+`sensor_id` may only contain letters, digits, `-`, `.`, `_` and `~`. Anything else is rejected
+with 422.
+
 ```json
 {
   "sensor_id": "living",
@@ -106,6 +110,7 @@ Return readings in a time period, grouped per sensor.
 | `start`      | yes      | Start of the period (inclusive)                                                   |
 | `end`        | no       | End of the period (inclusive); defaults to now (JST)                              |
 | `max_points` | no       | Max points per sensor; excess is thinned by every-Nth decimation. Omit for all points |
+| `sensor_ids` | no       | Comma-separated sensors to return (e.g. `home_1,home_2`). Omit for all sensors    |
 
 **Response** — one entry per sensor; each `sequence` is ordered oldest first:
 
