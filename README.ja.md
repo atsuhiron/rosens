@@ -21,7 +21,7 @@ Rosens は、センサーから HTTP 経由で部屋の環境データ(温度・
 
 ## 必要要件
 
-- Python >= 3.13
+- Python >= 3.15
 - 依存管理と実行に [uv](https://docs.astral.sh/uv/)
 
 依存パッケージ(fastapi, polars, pydantic, uvicorn、Windows では `tzdata`)は `uv sync` で自動的に
