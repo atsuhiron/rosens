@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 lazy from pydantic import BaseModel
 
 from rosens.api import get_environment_data, register_environment
@@ -98,3 +99,44 @@ async def test_get_environment_data_returns_all_points_without_max_points(monkey
     response = await get_environment_data(start=base)
 
     assert len(response.data[0].sequence) == 1000
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("sensor_ids", "expected"),
+    [
+        ("s-01", ["s-01"]),
+        ("s-01,s-03", ["s-01", "s-03"]),
+        (" s-01, s-03 ,", ["s-01", "s-03"]),
+        ("s-01,unknown", ["s-01"]),
+        ("unknown", []),
+        (None, ["s-01", "s-02", "s-03"]),
+        ("", ["s-01", "s-02", "s-03"]),
+        (",", ["s-01", "s-02", "s-03"]),
+    ],
+)
+async def test_get_environment_data_selects_sensors(
+    monkeypatch: pytest.MonkeyPatch, sensor_ids: str | None, expected: list[str]
+) -> None:
+    t = datetime(2026, 7, 19, 10, 0, 0, tzinfo=TZ)
+    fake_storage = FakeStorage(rows=[_row("s-01", 20.0, t), _row("s-02", 21.0, t), _row("s-03", 22.0, t)])
+    monkeypatch.setattr("rosens.api.get_storage", lambda: fake_storage)
+
+    response = await get_environment_data(start=t, sensor_ids=sensor_ids)
+
+    assert [sequence.sensor_id for sequence in response.data] == expected
+
+
+def _environment_data(sensor_id: str) -> EnvironmentData:
+    return EnvironmentData(sensor_id=sensor_id, temperature=20.0, humidity=40.0, pressure=1000.0, uptime_s=60)
+
+
+@pytest.mark.parametrize("sensor_id", ["home_1", "a.b~c-1", "A9"])
+def test_environment_data_accepts_url_unreserved_sensor_id(sensor_id: str) -> None:
+    assert _environment_data(sensor_id).sensor_id == sensor_id
+
+
+@pytest.mark.parametrize("sensor_id", ["", "a,b", "home 1", "a/b", "日本語", "home_1\n"])
+def test_environment_data_rejects_other_sensor_id(sensor_id: str) -> None:
+    with pytest.raises(ValidationError):
+        _environment_data(sensor_id)

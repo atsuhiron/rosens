@@ -14,7 +14,8 @@ class EnvironmentReading(BaseModel):
 
 
 class EnvironmentData(EnvironmentReading):
-    sensor_id: str = Field(description="Unique identifier for the sensor")
+    # Limited to URL-unreserved characters: ids go into /ui?sensor_ids=a,b as they are.
+    sensor_id: str = Field(pattern=r"^[A-Za-z0-9._~-]+$", description="Unique identifier for the sensor")
 
 
 class EnvironmentRecord(TypedDict):

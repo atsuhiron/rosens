@@ -121,6 +121,9 @@ window.addEventListener("resize", () => {
 let periodHours = 24;
 let autoTimer = null;
 
+// Series to show, as in /ui?sensor_ids=home_1,home_2. The API does the filtering.
+const sensorIds = new URLSearchParams(location.search).get("sensor_ids");
+
 // Thin out the time labels on narrow screens (phones), where the default tick
 // count makes them run into each other.
 function timeAxisOption() {
@@ -169,10 +172,10 @@ async function reload() {
   // Cap points to the chart's pixel width (~1 point/px): a no-op for short periods,
   // and it trims the long ones (7d ≈ 10k points) down to what the graph can show.
   const maxPoints = Math.round(charts.get("temperature").getWidth()) || 1000;
+  const query = new URLSearchParams({ start, max_points: maxPoints });
+  if (sensorIds) query.set("sensor_ids", sensorIds);
   try {
-    const res = await fetch(
-      `../data/environment?start=${encodeURIComponent(start)}&max_points=${maxPoints}`,
-    );
+    const res = await fetch(`../data/environment?${query}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = await res.json();
     render(body.data);

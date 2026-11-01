@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Dashboard (`/ui`) — choose which sensors to show from the URL, comma-separated, as in
+  `/ui?sensor_ids=home_1,home_2`. Without the parameter every sensor is shown.
+- `GET /data/environment` — optional `sensor_ids` query parameter (comma-separated) to return only
+  those sensors. Unknown ids are ignored.
+
+### Changed
+
+- **Breaking:** `POST /register/environment` — `sensor_id` may now only contain URL-unreserved
+  characters (letters, digits, `-`, `.`, `_`, `~`) and must not be empty. Anything else gets a 422.
+  Stored data with other ids can still be read.
+
 ### Internal
 
 - `deploy.bat` — deploy to the server in one command (`deploy.bat <host> [port]`): pulls, syncs
