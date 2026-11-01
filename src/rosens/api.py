@@ -15,9 +15,9 @@ from rosens.models.api_models import (
     RegisterResponse,
     StoredEnvironmentData,
 )
-from rosens.models.environment import EnvironmentData, EnvironmentRecord
 from rosens.storage import get_storage
 from rosens.util import TZ
+lazy from rosens.models.environment import EnvironmentData, EnvironmentRecord
 
 app = fastapi.FastAPI(
     title="Rosens API",

@@ -21,7 +21,7 @@ one file per calendar day.
 
 ## Requirements
 
-- Python >= 3.13
+- Python >= 3.15
 - [uv](https://docs.astral.sh/uv/) for dependency management and running
 
 Dependencies (fastapi, polars, pydantic, uvicorn, and `tzdata` on Windows) are installed

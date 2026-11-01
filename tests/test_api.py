@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
 import pytest
-from pydantic import BaseModel
+lazy from pydantic import BaseModel
 
 from rosens.api import get_environment_data, register_environment
-from rosens.datasets import Dataset
 from rosens.models.environment import EnvironmentData, EnvironmentRecord
 from rosens.util import TZ
+lazy from rosens.datasets import Dataset
 
 
 class FakeStorage:

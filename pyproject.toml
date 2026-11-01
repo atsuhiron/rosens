@@ -3,13 +3,13 @@ name = "rosens"
 version = "1.1.1"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 dependencies = [
-    "fastapi>=0.141.1",
-    "polars>=1.43.2",
-    "pydantic>=2.13.4",
-    "tzdata>=2026.1; sys_platform == 'win32'",
-    "uvicorn>=0.52.4",
+    "fastapi>=0.162.0",
+    "polars>=2.1.0",
+    "pydantic>=2.14.2",
+    "tzdata>=2026.6; sys_platform == 'win32'",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
@@ -17,10 +17,10 @@ rosens-server = "rosens.server:main"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
-    "ruff>=0.16.4",
-    "ty>=0.0.73",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1",
+    "ruff>=0.17.3",
+    "ty>=0.0.95",
 ]
 
 [build-system]

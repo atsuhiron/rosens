@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `deploy.bat` — deploy to the server in one command (`deploy.bat <host> [port]`): pulls, syncs
   dependencies, restarts the systemd service over ssh, then polls `GET /` until it answers 200.
+- Require Python 3.15 or later.
+- Update libraries, including polars 2.
 
 ## [1.1.1] - 2026-08-22
 
