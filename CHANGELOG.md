@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `POST /register/environment` — `temperature`, `humidity`, `pressure` and `uptime_s` are now
+  optional, since sensors differ in what they can measure. Send `null` or omit the key for a value
+  the sensor does not provide; it is stored as null. `sensor_id` is still required.
+- `GET /data/environment` — those values may now be `null` in the response.
+- Dashboard (`/ui`) — null values are not drawn, and a sensor with no value at all for a metric in
+  the period is left out of that chart (and its legend).
+
 ## [2.0.0] - 2026-11-01
 
 ### Added
