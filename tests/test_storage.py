@@ -40,6 +40,33 @@ def test_save_appends_to_existing_file(tmp_path: Path) -> None:
     assert df["sensor_id"].to_list() == ["sensor-1", "sensor-2"]
 
 
+def test_save_keeps_column_types_for_null_values(tmp_path: Path) -> None:
+    storage = Storage(data_dir=tmp_path)
+
+    storage.save(ENVIRONMENT, EnvironmentData(sensor_id="sensor-1", temperature=20.0), RECEIVED_AT)
+
+    df = pl.read_parquet(tmp_path / "environment" / "2026-07-11.parquet")
+    assert df["temperature"].to_list() == [20.0]
+    assert df["pressure"].to_list() == [None]
+    assert df["uptime_s"].to_list() == [None]
+    # Forced by schema_overrides, so an all-null column doesn't become polars' Null type.
+    assert df["humidity"].dtype == pl.Float32
+    assert df["pressure"].dtype == pl.Float32
+    assert df["uptime_s"].dtype == pl.Int32
+
+
+def test_save_appends_null_values_to_existing_file(tmp_path: Path) -> None:
+    storage = Storage(data_dir=tmp_path)
+
+    storage.save(ENVIRONMENT, _environment_data("sensor-1"), RECEIVED_AT)
+    storage.save(ENVIRONMENT, EnvironmentData(sensor_id="sensor-2", humidity=50.0), RECEIVED_AT)
+
+    rows = storage.load(ENVIRONMENT, RECEIVED_AT, RECEIVED_AT)
+    assert [row["pressure"] for row in rows] == [1000.0, None]
+    assert [row["humidity"] for row in rows] == [40.0, 50.0]
+    assert [row["uptime_s"] for row in rows] == [3600, None]
+
+
 def test_load_spans_multiple_days(tmp_path: Path) -> None:
     storage = Storage(data_dir=tmp_path)
     times = {

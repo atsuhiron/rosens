@@ -127,6 +127,37 @@ async def test_get_environment_data_selects_sensors(
     assert [sequence.sensor_id for sequence in response.data] == expected
 
 
+@pytest.mark.asyncio
+async def test_get_environment_data_returns_null_values_as_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    t = datetime(2026, 7, 19, 10, 0, 0, tzinfo=TZ)
+    row: EnvironmentRecord = {**_row("s-01", 20.0, t), "pressure": None, "uptime_s": None}
+    fake_storage = FakeStorage(rows=[row])
+    monkeypatch.setattr("rosens.api.get_storage", lambda: fake_storage)
+
+    response = await get_environment_data(start=t)
+
+    reading = response.data[0].sequence[0]
+    assert reading.temperature == 20.0
+    assert reading.pressure is None
+    assert reading.uptime_s is None
+
+
+def test_environment_data_omitted_values_are_none() -> None:
+    data = EnvironmentData(sensor_id="s-01")
+
+    assert data.temperature is None
+    assert data.humidity is None
+    assert data.pressure is None
+    assert data.uptime_s is None
+
+
+def test_environment_data_accepts_explicit_null() -> None:
+    data = EnvironmentData.model_validate({"sensor_id": "s-01", "temperature": 20.0, "humidity": None})
+
+    assert data.temperature == 20.0
+    assert data.humidity is None
+
+
 def _environment_data(sensor_id: str) -> EnvironmentData:
     return EnvironmentData(sensor_id=sensor_id, temperature=20.0, humidity=40.0, pressure=1000.0, uptime_s=60)
 

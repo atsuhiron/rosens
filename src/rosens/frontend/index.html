@@ -152,12 +152,18 @@ function render(data) {
   const isEmpty = data.every((sensor) => sensor.sequence.length === 0);
   document.getElementById("empty").style.display = isEmpty ? "block" : "none";
   for (const metric of METRICS) {
-    const series = data.map((sensor) => ({
-      name: sensor.sensor_id,
-      type: "line",
-      showSymbol: false,
-      data: sensor.sequence.map((r) => [r.received_at, r[metric.key]]),
-    }));
+    // null means the sensor does not measure this value: drop those points, and drop
+    // sensors with no valid point at all so they don't show up in this chart's legend.
+    const series = data
+      .map((sensor) => ({
+        name: sensor.sensor_id,
+        type: "line",
+        showSymbol: false,
+        data: sensor.sequence
+          .filter((r) => r[metric.key] != null)
+          .map((r) => [r.received_at, r[metric.key]]),
+      }))
+      .filter((s) => s.data.length > 0);
     const option = baseOption(metric.title);
     option.series = series;
     // notMerge so series of sensors that disappeared from the response are dropped.
