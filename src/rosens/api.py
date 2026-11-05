@@ -21,7 +21,7 @@ lazy from rosens.models.environment import EnvironmentData, EnvironmentRecord
 
 app = fastapi.FastAPI(
     title="Rosens API",
-    version="2.0.0",
+    version="2.1.0",
 )
 
 # Dashboard (static HTML + vendored ECharts). Resolved from the package location so
