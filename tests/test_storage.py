@@ -3,7 +3,8 @@ lazy from pathlib import Path
 
 import polars as pl
 
-from rosens.datasets import ENVIRONMENT
+from rosens.datasets import COUNT, ENVIRONMENT
+from rosens.models.count import CountData
 from rosens.models.environment import EnvironmentData
 from rosens.storage import Storage
 
@@ -103,3 +104,23 @@ def test_load_returns_empty_when_no_files(tmp_path: Path) -> None:
     rows = storage.load(ENVIRONMENT, RECEIVED_AT, RECEIVED_AT + timedelta(days=1))
 
     assert rows == []
+
+
+def test_save_and_load_count(tmp_path: Path) -> None:
+    storage = Storage(data_dir=tmp_path)
+
+    storage.save(COUNT, CountData(sensor_id="sensor-1", count_type="motion", count=7, duration_s=300), RECEIVED_AT)
+
+    df = pl.read_parquet(tmp_path / "count" / "2026-07-11.parquet")
+    assert df["count"].dtype == pl.Int32
+    assert df["duration_s"].dtype == pl.Int32
+    rows = storage.load(COUNT, RECEIVED_AT, RECEIVED_AT)
+    assert rows == [
+        {
+            "sensor_id": "sensor-1",
+            "count_type": "motion",
+            "count": 7,
+            "duration_s": 300,
+            "received_at": RECEIVED_AT,
+        }
+    ]

@@ -3,6 +3,8 @@ lazy from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from rosens.models.common import SensorId
+
 
 class EnvironmentReading(BaseModel):
     """Measured values of a single reading, without sensor identity.
@@ -18,8 +20,7 @@ class EnvironmentReading(BaseModel):
 
 
 class EnvironmentData(EnvironmentReading):
-    # Limited to URL-unreserved characters: ids go into /ui?sensor_ids=a,b as they are.
-    sensor_id: str = Field(pattern=r"^[A-Za-z0-9._~-]+$", description="Unique identifier for the sensor")
+    sensor_id: SensorId
 
 
 class EnvironmentRecord(TypedDict):
