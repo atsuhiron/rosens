@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from rosens.models.count import CountReading, CountType
 from rosens.models.environment import EnvironmentReading
 
 
@@ -27,3 +28,17 @@ class EnvironmentSequence(BaseModel):
 
 class GetEnvironmentDataResponse(BaseModel):
     data: list[EnvironmentSequence] = Field(description="Per-sensor readings in the requested period")
+
+
+class StoredCountData(CountReading):
+    received_at: datetime = Field(description="Timestamp when the data was received (end of the counting period)")
+
+
+class CountSequence(BaseModel):
+    sensor_id: str = Field(description="Unique identifier for the sensor")
+    count_type: CountType = Field(description="What is being counted")
+    sequence: list[StoredCountData] = Field(description="Counts of this type from this sensor, oldest first")
+
+
+class GetCountDataResponse(BaseModel):
+    data: list[CountSequence] = Field(description="Per-sensor, per-type counts in the requested period")

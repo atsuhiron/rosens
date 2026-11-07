@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 import polars as pl
 
+from rosens.models.count import CountRecord
 from rosens.models.environment import EnvironmentRecord
 
 
@@ -26,5 +27,13 @@ ENVIRONMENT = Dataset[EnvironmentRecord](
         "humidity": pl.Float32,
         "pressure": pl.Float32,
         "uptime_s": pl.Int32,
+    },
+)
+
+COUNT = Dataset[CountRecord](
+    name="count",
+    schema_overrides={
+        "count": pl.Int32,
+        "duration_s": pl.Int32,
     },
 )

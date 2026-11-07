@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `POST /register/count` — receive a count of how many times something happened during a period
+  (`sensor_id`, `count_type`, `count`, `duration_s`). `count_type` says what is counted; for now
+  only `"motion"` (motion sensor triggers) is accepted, anything else gets a 422. `count` must be
+  0 or more and `duration_s` (the period length, ending when the server receives it) more than 0.
+  Stored under `data/count/`.
+- `GET /data/count` — return counts in a period (`start` required, `end` optional), grouped per
+  sensor and count type and sorted oldest first. Optional comma-separated `sensor_ids` and
+  `count_types` query parameters narrow the result. Counts are never thinned (no `max_points`).
+
 ## [2.1.0] - 2026-11-06
 
 ### Changed
