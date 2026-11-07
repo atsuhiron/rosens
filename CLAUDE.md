@@ -87,6 +87,13 @@ already made (with the user) that future work should follow:
   2. `src/rosens/datasets.py`: one `Dataset[<KindRecord>]` entry (directory name +
      parquet `schema_overrides`).
   3. `src/rosens/api.py`: the two endpoints, following the environment handlers as the template.
+
+  Then document the endpoints in the READMEs (see the next rule).
+- **Keep the READMEs in sync with the API**: whenever an endpoint is added or its request,
+  response or query parameters change, update the `## API` section of both `README.md` (English)
+  and `README.ja.md` (Japanese) in the same change. Follow the existing endpoint sections as the
+  template (field/parameter table, validation rules, request/response JSON example, curl example
+  for `GET`). Also update the `## Overview` bullets if the change affects what the system does.
 - **Storage model is uniform**: every kind is "rows with a server-side `received_at`, appended to
   a daily parquet file under `data/<kind>/`". This covers periodic readings (CO2, illuminance, …)
   and irregular event data (door open/close, motion) alike — event kinds just post whenever the
