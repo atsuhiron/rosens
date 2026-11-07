@@ -97,6 +97,7 @@
   <div class="panel"><div id="chart-temperature" class="chart"></div></div>
   <div class="panel"><div id="chart-humidity" class="chart"></div></div>
   <div class="panel"><div id="chart-pressure" class="chart"></div></div>
+  <div class="panel"><div id="chart-count-motion" class="chart"></div></div>
 </main>
 <script>
 "use strict";
@@ -107,9 +108,22 @@ const METRICS = [
   { key: "pressure", title: "気圧 (hPa)", el: "chart-pressure" },
 ];
 
-const charts = new Map(
-  METRICS.map((m) => [m.key, echarts.init(document.getElementById(m.el))]),
-);
+// One bar chart per count type. Keep in sync with CountType in models/count.py: a type
+// missing here is not shown, so adding one there means adding a line (and a panel) here.
+const COUNT_TYPES = [
+  { key: "motion", title: "人感センサー反応回数", el: "chart-count-motion" },
+];
+
+// Counts are summed server-side into buckets this wide (seconds), chosen per period so
+// each chart has 12-28 bars.
+const BUCKET_SECONDS = { 1: 300, 6: 900, 24: 3600, 168: 21600 };
+
+const JST_OFFSET_MS = 9 * 3600 * 1000;
+
+const charts = new Map([
+  ...METRICS.map((m) => [m.key, echarts.init(document.getElementById(m.el))]),
+  ...COUNT_TYPES.map((t) => [`count:${t.key}`, echarts.init(document.getElementById(t.el))]),
+]);
 window.addEventListener("resize", () => {
   for (const chart of charts.values()) {
     chart.resize();
@@ -148,9 +162,7 @@ function baseOption(title) {
   };
 }
 
-function render(data) {
-  const isEmpty = data.every((sensor) => sensor.sequence.length === 0);
-  document.getElementById("empty").style.display = isEmpty ? "block" : "none";
+function renderEnvironment(data) {
   for (const metric of METRICS) {
     // null means the sensor does not measure this value: drop those points, and drop
     // sensors with no valid point at all so they don't show up in this chart's legend.
@@ -171,20 +183,112 @@ function render(data) {
   }
 }
 
+// Round down to a bucket boundary. Buckets are aligned to JST midnight, like the server's.
+function floorToBucket(ms, bucketMs) {
+  return Math.floor((ms + JST_OFFSET_MS) / bucketMs) * bucketMs - JST_OFFSET_MS;
+}
+
+function bucketLabel(bucketS) {
+  return bucketS >= 3600 ? `${bucketS / 3600}時間` : `${bucketS / 60}分`;
+}
+
+function formatTime(ms) {
+  const d = new Date(ms);
+  const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return { date: `${d.getMonth() + 1}/${d.getDate()}`, hm };
+}
+
+// Bars sit at the middle of their bucket, so the bucket is middle ± half its width.
+function countTooltip(params, bucketMs) {
+  const middle = params[0].value[0];
+  const from = formatTime(middle - bucketMs / 2);
+  const to = formatTime(middle + bucketMs / 2);
+  const lines = [`${from.date} ${from.hm}–${to.hm}`];
+  let total = 0;
+  for (const p of params) {
+    if (p.value[1] == null) continue;  // this sensor sent nothing for the bucket
+    total += p.value[1];
+    lines.push(`${p.marker}${p.seriesName}: ${p.value[1]}回`);
+  }
+  if (params.length > 1) lines.push(`合計: ${total}回`);
+  return lines.join("<br>");
+}
+
+function renderCounts(data, rangeStart, rangeEnd, bucketS) {
+  const bucketMs = bucketS * 1000;
+  // Every bucket in the period, so all sensors' series share the same x values: the axis
+  // tooltip then lines up per bucket, and a missing bucket reads as "no data" (null).
+  const middles = [];
+  for (let t = rangeStart; t < rangeEnd; t += bucketMs) middles.push(t + bucketMs / 2);
+  for (const countType of COUNT_TYPES) {
+    const series = data
+      .filter((s) => s.count_type === countType.key)
+      .map((s) => {
+        const byMiddle = new Map(
+          s.sequence.map((c) => [Date.parse(c.received_at) - (c.duration_s * 1000) / 2, c.count]),
+        );
+        return {
+          name: s.sensor_id,
+          type: "bar",
+          stack: "count",
+          barCategoryGap: "10%",
+          data: middles.map((m) => [m, byMiddle.get(m) ?? null]),
+        };
+      });
+    const option = {
+      title: {
+        text: `${countType.title}（${bucketLabel(bucketS)}ごと）`,
+        left: 8,
+        top: 4,
+        textStyle: { fontSize: 14 },
+      },
+      tooltip: { trigger: "axis", formatter: (params) => countTooltip(params, bucketMs) },
+      // On its own line under the title: the title is longer than the line charts' and
+      // would run into a legend beside it on phones.
+      legend: { top: 26, left: 8 },
+      grid: { left: 60, right: 24, top: 64, bottom: 64 },
+      // Pinned to the period so a quiet stretch still spans the full width.
+      xAxis: { ...timeAxisOption(), min: rangeStart, max: rangeEnd },
+      yAxis: { type: "value", minInterval: 1 },
+      dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 12 }],
+      series,
+    };
+    charts.get(`count:${countType.key}`).setOption(option, { notMerge: true });
+  }
+}
+
+async function fetchData(path, query) {
+  const res = await fetch(`../data/${path}?${query}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()).data;
+}
+
 async function reload() {
   const status = document.getElementById("status");
   status.textContent = "読み込み中…";
-  const start = new Date(Date.now() - periodHours * 3600 * 1000).toISOString();
+  const now = Date.now();
+  const start = new Date(now - periodHours * 3600 * 1000).toISOString();
   // Cap points to the chart's pixel width (~1 point/px): a no-op for short periods,
   // and it trims the long ones (7d ≈ 10k points) down to what the graph can show.
   const maxPoints = Math.round(charts.get("temperature").getWidth()) || 1000;
-  const query = new URLSearchParams({ start, max_points: maxPoints });
-  if (sensorIds) query.set("sensor_ids", sensorIds);
+  const envQuery = new URLSearchParams({ start, max_points: maxPoints });
+  // Counts start on a bucket boundary so the first bar is a whole bucket, not a partial sum.
+  const bucketS = BUCKET_SECONDS[periodHours];
+  const countStart = floorToBucket(now - periodHours * 3600 * 1000, bucketS * 1000);
+  const countQuery = new URLSearchParams({ start: new Date(countStart).toISOString(), bucket_s: bucketS });
+  if (sensorIds) {
+    envQuery.set("sensor_ids", sensorIds);
+    countQuery.set("sensor_ids", sensorIds);
+  }
   try {
-    const res = await fetch(`../data/environment?${query}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = await res.json();
-    render(body.data);
+    const [envData, countData] = await Promise.all([
+      fetchData("environment", envQuery),
+      fetchData("count", countQuery),
+    ]);
+    const isEmpty = [...envData, ...countData].every((s) => s.sequence.length === 0);
+    document.getElementById("empty").style.display = isEmpty ? "block" : "none";
+    renderEnvironment(envData);
+    renderCounts(countData, countStart, now, bucketS);
     status.textContent = `最終更新: ${new Date().toLocaleTimeString()}`;
   } catch (err) {
     status.textContent = `取得エラー: ${err.message}`;

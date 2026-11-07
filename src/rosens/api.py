@@ -6,6 +6,7 @@ from typing import Annotated
 
 import fastapi
 
+from rosens.bucketing import bucket_counts
 from rosens.datasets import COUNT, ENVIRONMENT
 from rosens.downsample import decimate
 from rosens.models.api_models import (
@@ -106,8 +107,10 @@ async def get_count_data(
     end: datetime | None = None,
     sensor_ids: str | None = None,
     count_types: str | None = None,
+    bucket_s: Annotated[int | None, fastapi.Query(gt=0)] = None,
 ) -> GetCountDataResponse:
-    # No max_points here: decimating counts would silently drop occurrences.
+    # No max_points here: decimating counts would silently drop occurrences. To shrink long
+    # periods, bucket_s sums them into fixed-width buckets instead.
     period_start, period_end = _resolve_period(start, end)
     rows = await asyncio.to_thread(lambda: get_storage().load(COUNT, period_start, period_end))
     selected_sensors = _parse_csv(sensor_ids)
@@ -124,7 +127,11 @@ async def get_count_data(
         CountSequence(
             sensor_id=sensor_id,
             count_type=count_type,
-            sequence=[StoredCountData.model_validate(row) for row in group_rows],
+            sequence=(
+                bucket_counts(group_rows, bucket_s)
+                if bucket_s is not None
+                else [StoredCountData.model_validate(row) for row in group_rows]
+            ),
         )
         for (sensor_id, count_type), group_rows in sorted(grouped.items())
     ]

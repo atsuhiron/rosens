@@ -227,6 +227,31 @@ async def test_get_count_data_groups_rows_by_sensor_and_type(monkeypatch: pytest
 
 
 @pytest.mark.asyncio
+async def test_get_count_data_sums_each_group_into_buckets(monkeypatch: pytest.MonkeyPatch) -> None:
+    def at(hour: int, minute: int) -> datetime:
+        return datetime(2026, 7, 19, hour, minute, 0, tzinfo=TZ)
+
+    fake_storage = FakeStorage(
+        rows=[
+            _count_row("s-01", "motion", 1, at(10, 10)),
+            _count_row("s-02", "motion", 5, at(10, 20)),
+            _count_row("s-01", "motion", 2, at(10, 40)),
+            _count_row("s-01", "motion", 4, at(11, 30)),
+        ]
+    )
+    monkeypatch.setattr("rosens.api.get_storage", lambda: fake_storage)
+
+    response = await get_count_data(start=at(10, 0), bucket_s=3600)
+
+    s01, s02 = response.data
+    assert [(c.received_at, c.count, c.duration_s) for c in s01.sequence] == [
+        (at(11, 0), 3, 3600),
+        (at(12, 0), 4, 3600),
+    ]
+    assert [(c.received_at, c.count) for c in s02.sequence] == [(at(11, 0), 5)]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("sensor_ids", "count_types", "expected"),
     [

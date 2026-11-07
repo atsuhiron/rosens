@@ -59,7 +59,12 @@ Individual commands:
 - `src/rosens/frontend/` — static dashboard served at `/ui` via FastAPI's `app.frontend()`
   (requires fastapi >= 0.138). Plain HTML/JS, no build step; `echarts.min.js` is a vendored copy of
   Apache ECharts (from jsDelivr) so the page works without internet access. The directory is
-  resolved from `api.py`'s `__file__`, not the working directory.
+  resolved from `api.py`'s `__file__`, not the working directory. Environment values are line
+  charts; counts are stacked bar charts fed by `GET /data/count?bucket_s=...`, one per entry of the
+  page's `COUNT_TYPES` — keep that list in sync with `CountType` in `models/count.py`.
+- `src/rosens/bucketing.py` — `bucket_counts()` sums count rows into fixed-width buckets aligned to
+  JST midnight (for `bucket_s` on `GET /data/count`). Counts are summed, never decimated like the
+  environment values in `downsample.py`, since dropping a row would lose occurrences.
 - `src/rosens/util.py` — shared constants; `TZ` is a fixed JST (UTC+9) offset used to timestamp
   incoming readings server-side (sensors do not send their own timestamp).
 
