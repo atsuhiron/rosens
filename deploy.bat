@@ -27,7 +27,9 @@ set "HOST=%TARGET%"
 for /f "tokens=2 delims=@" %%h in ("%TARGET%") do set "HOST=%%h"
 
 echo === deploy to %TARGET% (%REMOTE_DIR%) ===
-ssh -t %TARGET% "cd %REMOTE_DIR% && git pull && uv sync --no-dev && sudo systemctl restart %SERVICE%"
+rem A command run over ssh gets a non-interactive shell, and Ubuntu's ~/.bashrc returns early for
+rem those, before the PATH line the uv installer appends. So add uv's install dir explicitly.
+ssh -t %TARGET% "export PATH=$HOME/.local/bin:$PATH && cd %REMOTE_DIR% && git pull && uv sync --no-dev && sudo systemctl restart %SERVICE%"
 if errorlevel 1 (
     echo [FAILED] remote deploy failed - the service was left as it was
     exit /b 1
